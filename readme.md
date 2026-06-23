@@ -1,105 +1,98 @@
-# InfantPose: Fine-Tuning ViTPose++ for Infant Keypoint Estimation
+# InfantPose: Fine-Tuning ViTPose++ Base for Infant Keypoint Estimation
 
 ## Overview
 
-InfantPose is a domain-adapted pose estimation pipeline built by fine-tuning ViTPose++ on a custom infant pose dataset containing 2,000 annotated images, under IISC, Bangalore.
+This project focuses on adapting ViTPose++ Base for infant pose estimation through transfer learning on a custom dataset of 2,000 annotated infant images.
 
-The project aims to improve keypoint localization accuracy for infant body structures, which differ significantly from standard adult human pose datasets such as COCO. The resulting model can be used for pose estimation, annotation correction, dataset quality assurance, and downstream medical or developmental analysis.
+While ViTPose++ is pretrained on the COCO human pose dataset, infant body proportions, pose distributions, and occlusion patterns differ significantly from adults. This work fine-tunes the model to accurately localize infant-specific anatomical keypoints, under IISC Bangalore.
 
 ## Dataset
 
-* Total Images: 2,000
+* Images: 2,000
 * Annotation Format: YOLO Pose
-* Keypoints: 14
-* Domain: Infant body pose estimation
+* Target Keypoints: 14
+* Domain: Infant Pose Estimation
 
-### Keypoint Schema
+The dataset is converted into COCO keypoint format for compatibility with the MMPose training framework.
 
-1. Arm A Distal Endpoint
-2. Arm A Middle Joint
-3. Arm A Upper Joint
-4. Arm B Upper Joint
-5. Arm B Middle Joint
-6. Arm B Distal Endpoint
-7. Arm B Lower Endpoint
-8. Pelvis Center
-9. Leg B Upper Joint
-10. Leg B Middle Joint
-11. Leg B Distal Endpoint
-12. Leg A Upper Joint
-13. Leg A Middle Joint
-14. Leg A Distal Endpoint
+## Model
 
-## Methodology
+### Backbone
 
-### 1. Dataset Conversion
+* ViTPose++ Base
+* Pretrained on COCO Human Pose Dataset
 
-YOLO pose annotations are converted into COCO-style keypoint annotations compatible with the MMPose training framework.
+### Adaptation
 
-### 2. Transfer Learning
+The original COCO prediction head is replaced to predict 14 infant keypoints instead of the standard 17 COCO keypoints.
 
-A pretrained ViTPose++ Base model trained on COCO human pose data is used as the initialization checkpoint.
+## Training Strategy
 
-### 3. Head Adaptation
+### Stage 1: Head Training
 
-The original 17-keypoint prediction head is replaced with a custom 14-keypoint head corresponding to the infant skeleton definition.
+The ViTPose++ backbone is frozen while training only the newly initialized keypoint prediction head.
 
-### 4. Progressive Fine-Tuning
+Objective:
 
-#### Stage 1
+* Learn infant-specific keypoint definitions
+* Stabilize training
 
-* Freeze backbone
-* Train keypoint head
-* Learn infant-specific keypoint semantics
+### Stage 2: Full Fine-Tuning
 
-#### Stage 2
+The entire network is unfrozen and trained end-to-end.
 
-* Unfreeze full network
-* End-to-end fine-tuning
-* Optimize for infant pose distributions
+Objective:
 
-### 5. Data Augmentation
+* Adapt feature representations to infant body structure
+* Improve localization accuracy on challenging poses and occlusions
 
-* Horizontal Flip
-* Rotation
-* Scaling
+## Data Augmentation
+
+The following augmentations are applied during training:
+
+* Random Horizontal Flip
+* Random Rotation
+* Random Scaling
 * Brightness Adjustment
 * Contrast Adjustment
-* Occlusion Simulation
+* Synthetic Occlusion
+
+These augmentations improve generalization across diverse infant poses and imaging conditions.
 
 ## Training Pipeline
 
 Dataset
 → COCO Conversion
-→ ViTPose++ Base Initialization
-→ Head Replacement (17 → 14)
+→ ViTPose++ Base Checkpoint
+→ Replace Prediction Head (17 → 14)
 → Head-Only Training
 → Full Fine-Tuning
 → Validation
-→ Checkpoint Selection
-→ Evaluation
+→ Best Checkpoint Selection
 
-## Evaluation
+## Evaluation Metrics
 
-Metrics:
+Model performance is evaluated using:
 
-* PCK (Percentage of Correct Keypoints)
-* AP (Average Precision)
+* Average Precision (AP)
+* Percentage of Correct Keypoints (PCK)
 * Validation Loss
 
-Special focus is given to:
+Special attention is given to:
 
 * Wrist localization
 * Ankle localization
 * Occluded joints
 * Extreme infant poses
 
+## Expected Outcome
 
-This allows automatic identification of potentially incorrect annotations while minimizing manual review effort.
+The fine-tuned ViTPose++ model learns infant-specific body geometry while leveraging the strong human pose priors learned from COCO pretraining.
+
+The resulting model serves as a high-accuracy infant pose estimator and can be further used for annotation correction, dataset refinement, and downstream developmental analysis tasks.
 
 ## Tech Stack
 
 * Python
 * PyTorch
 * ViTPose++
-* COCO Annotation Format
